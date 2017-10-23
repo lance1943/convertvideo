@@ -1,5 +1,6 @@
 package com.yunzhuo.video;
 
+import java.sql.Types;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -27,6 +28,11 @@ public class WorkThread extends Thread implements DisposableBean {
 
 	private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
+	public void init() throws CloneNotSupportedException {
+		cacheQueue = new ArrayBlockingQueue<String>(capacity);
+
+	}
+
 	public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
 	}
@@ -41,10 +47,6 @@ public class WorkThread extends Thread implements DisposableBean {
 
 	public void setCacheQueue(ArrayBlockingQueue<String> cacheQueue) {
 		this.cacheQueue = cacheQueue;
-	}
-
-	public int getCapacity() {
-		return capacity;
 	}
 
 	public void setCapacity(int capacity) {
@@ -69,19 +71,32 @@ public class WorkThread extends Thread implements DisposableBean {
 
 	// messge = "12345||\\home\\user\\dd.avi"
 	public void doWork(String message) {
-		String[] arrMessage = message.split("||");
+		String[] arrMessage = message.split("\\|");
+		if (arrMessage.length != 2) {
+			logger.info("无效消息 " + message);
+			return;
+		}
 		fileId = Integer.valueOf(arrMessage[0]);
 		ConvertVideo cv = new ConvertVideo();
 		cv.setInputAbslouteFileName(arrMessage[1]);
 		cv.setFfmpegPath(ffmpegPath);
 		cv.parser();
 		if (!cv.checkfile(arrMessage[1])) {
-			System.out.println(arrMessage[1] + " is not file");
+			logger.info(arrMessage[1] + " is not file");
 			return;
 		}
 		if (cv.process()) {
-			System.out.println("ok");
+			logger.info("process ok");
 			// 根据FileID 更新 文件状态
+			String updateSQL = "update upload_big_file_log set status=? where id =? ";
+			logger.info(updateSQL + " status=2," + "fileId=" + fileId);
+			try {
+
+				jdbcTemplate.update(updateSQL, new Object[] { 2, fileId }, new int[] { Types.INTEGER, Types.INTEGER });
+				logger.info("update db finished fileId:" + fileId);
+			} catch (Exception e) {
+				logger.error("save db error", e);
+			}
 		}
 	}
 
@@ -102,7 +117,7 @@ public class WorkThread extends Thread implements DisposableBean {
 		while (isContinue()) {
 			try {
 				String message = cacheQueue.take();
-				if (message == null || message.split("||").length != 2) {
+				if (message == null) {
 					logger.info("中断激活消息.");
 				} else {
 					logger.info("Worker handle: {}.", message.toString());
@@ -116,6 +131,32 @@ public class WorkThread extends Thread implements DisposableBean {
 			}
 		}
 		logger.info("Worker线程正常退出...");
+
+	}
+
+	public static void main(String[] args) {
+		String inputAbslouteFileName = "/sqyjy/data/upload/upload2/20170814/48134174bea4425591b2068737e6530e1502715366297.mp4";
+		// String[] arrMessage = s.split("\\|");
+		// for (String ss : arrMessage) {
+		// System.out.println(ss);
+		// }
+		// System.out.println(arrMessage.length);
+		//
+		// String[] inputArr = arrMessage[1].split("/");
+		// String inputFileName = inputArr[inputArr.length - 1];// a.avi
+		// String fliePath = arrMessage[1].substring(0,
+		// arrMessage[1].lastIndexOf("/"));
+		//
+		// String outputPath = fliePath + "/temp/";
+		// System.out.println("inputAbslouteFileName:" + arrMessage[1]);
+		// System.out.println("outputPath:" + outputPath);
+		// System.out.println("fliePath:" + fliePath);
+		// System.out.println("inputFileName:" + inputFileName);
+
+		String type = inputAbslouteFileName
+				.substring(inputAbslouteFileName.lastIndexOf(".") + 1, inputAbslouteFileName.length()).toLowerCase();
+
+		System.out.println(type);
 
 	}
 }

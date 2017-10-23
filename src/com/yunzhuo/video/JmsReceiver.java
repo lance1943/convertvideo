@@ -25,7 +25,6 @@ public class JmsReceiver implements BeanNameAware, DisposableBean {
 	public JmsReceiver() {
 		super();
 	}
-
 	public void setJmsTemplate(JmsTemplate jmsTemplate) {
 		this.jmsTemplate = jmsTemplate;
 	}

@@ -1,12 +1,15 @@
 package com.yunzhuo.video;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ConvertVideo {
+
+	public final Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	private String ffmpegPath = "";
 
@@ -14,7 +17,6 @@ public class ConvertVideo {
 	private String inputFileName = "";
 	private String outputPath = "";
 	private String outputFileName = "";
-
 
 	public String getInputAbslouteFileName() {
 		return inputAbslouteFileName;
@@ -62,18 +64,28 @@ public class ConvertVideo {
 	// }
 	// }
 	// \home\test\123.mp4
-	public void parser() { // ÏÈ»ñÈ¡µ±Ç°ÏîÄ¿Â·¾¶£¬ÔÚ»ñµÃÔ´ÎÄ¼ş¡¢Ä¿±êÎÄ¼ş¡¢×ª»»Æ÷µÄÂ·¾¶
-		String[] inputArr = inputAbslouteFileName.split("\\");
-		inputFileName = inputArr[inputArr.length - 1];// a.avi
-		String fliePath = inputAbslouteFileName.substring(0, inputAbslouteFileName.lastIndexOf("\\") - 1);
+	public void parser() { // å…ˆè·å–å½“å‰é¡¹ç›®è·¯å¾„ï¼Œåœ¨è·å¾—æºæ–‡ä»¶ã€ç›®æ ‡æ–‡ä»¶ã€è½¬æ¢å™¨çš„è·¯å¾„
 
-		outputPath = fliePath + "\\temp\\";
-		System.out.println("inputAbslouteFileName:" + inputAbslouteFileName);
-		System.out.println("outputPath:" + outputPath);
+		String[] inputArr = inputAbslouteFileName.split("/");
+		inputFileName = inputArr[inputArr.length - 1];// a.avi
+		String fliePath = inputAbslouteFileName.substring(0, inputAbslouteFileName.lastIndexOf("/"));
+
+		outputPath = fliePath + "/temp/";
+		logger.info("inputAbslouteFileName:" + inputAbslouteFileName);
+		logger.info("outputPath:" + outputPath);
+
+		// åˆ¤æ–­æ–‡ä»¶å¤¹æ˜¯å¦å­˜åœ¨ï¼Œä¸å­˜åœ¨åˆ™åˆ›å»º
+		File outputDiretory = new File(outputPath);
+		if (!outputDiretory.exists() && !outputDiretory.isDirectory()) {
+			logger.info("æ–‡ä»¶å¤¹ä¸å­˜åœ¨:" + outputPath);
+			outputDiretory.mkdir();
+		} else {
+			logger.info("è¾“å‡ºæ–‡ä»¶å¤¹å­˜åœ¨:" + outputPath);
+		}
 
 	}
 
-	// protected void getPath() { // ÏÈ»ñÈ¡µ±Ç°ÏîÄ¿Â·¾¶£¬ÔÚ»ñµÃÔ´ÎÄ¼ş¡¢Ä¿±êÎÄ¼ş¡¢×ª»»Æ÷µÄÂ·¾¶
+	// protected void getPath() { // å…ˆè·å–å½“å‰é¡¹ç›®è·¯å¾„ï¼Œåœ¨è·å¾—æºæ–‡ä»¶ã€ç›®æ ‡æ–‡ä»¶ã€è½¬æ¢å™¨çš„è·¯å¾„
 	// File diretory = new File("");
 	// try {
 	// String currPath = diretory.getAbsolutePath();
@@ -82,7 +94,7 @@ public class ConvertVideo {
 	// ffmpegPath = currPath + "\\ffmpeg\\bin\\";
 	// System.out.println(currPath);
 	// } catch (Exception e) {
-	// System.out.println("getPath³ö´í");
+	// System.out.println("getPathå‡ºé”™");
 	// }
 	// }
 
@@ -90,13 +102,13 @@ public class ConvertVideo {
 		int type = checkContentType();
 		boolean status = false;
 		if (type == 0) {
-			System.out.println("Ö±½Ó×ª³Éflv¸ñÊ½");
-			status = processMp4(inputAbslouteFileName);// Ö±½Ó×ª³Éflv¸ñÊ½
+			System.out.println("ç›´æ¥è½¬æˆflvæ ¼å¼");
+			status = processMp4(inputAbslouteFileName);// ç›´æ¥è½¬æˆflvæ ¼å¼
 		} else if (type == 1) {
 			String avifilepath = processAVI(type);
 			if (avifilepath == null)
-				return false;// Ã»ÓĞµÃµ½avi¸ñÊ½
-			status = processMp4(avifilepath);// ½«avi×ª³Éflv¸ñÊ½
+				return false;// æ²¡æœ‰å¾—åˆ°aviæ ¼å¼
+			status = processMp4(avifilepath);// å°†aviè½¬æˆflvæ ¼å¼
 		}
 		return status;
 	}
@@ -104,7 +116,7 @@ public class ConvertVideo {
 	private int checkContentType() {
 		String type = inputAbslouteFileName
 				.substring(inputAbslouteFileName.lastIndexOf(".") + 1, inputAbslouteFileName.length()).toLowerCase();
-		// ffmpegÄÜ½âÎöµÄ¸ñÊ½£º£¨asx£¬asf£¬mpg£¬wmv£¬3gp£¬mp4£¬mov£¬avi£¬flvµÈ£©
+		// ffmpegèƒ½è§£æçš„æ ¼å¼ï¼šï¼ˆasxï¼Œasfï¼Œmpgï¼Œwmvï¼Œ3gpï¼Œmp4ï¼Œmovï¼Œaviï¼Œflvç­‰ï¼‰
 		if (type.equals("avi")) {
 			return 0;
 		} else if (type.equals("mpg")) {
@@ -124,8 +136,8 @@ public class ConvertVideo {
 		} else if (type.equals("flv")) {
 			return 0;
 		}
-		// ¶ÔffmpegÎŞ·¨½âÎöµÄÎÄ¼ş¸ñÊ½(wmv9£¬rm£¬rmvbµÈ),
-		// ¿ÉÒÔÏÈÓÃ±ğµÄ¹¤¾ß£¨mencoder£©×ª»»Îªavi(ffmpegÄÜ½âÎöµÄ)¸ñÊ½.
+		// å¯¹ffmpegæ— æ³•è§£æçš„æ–‡ä»¶æ ¼å¼(wmv9ï¼Œrmï¼Œrmvbç­‰),
+		// å¯ä»¥å…ˆç”¨åˆ«çš„å·¥å…·ï¼ˆmencoderï¼‰è½¬æ¢ä¸ºavi(ffmpegèƒ½è§£æçš„)æ ¼å¼.
 		else if (type.equals("wmv9")) {
 			return 1;
 		} else if (type.equals("rm")) {
@@ -144,10 +156,10 @@ public class ConvertVideo {
 		return true;
 	}
 
-	// ¶ÔffmpegÎŞ·¨½âÎöµÄÎÄ¼ş¸ñÊ½(wmv9£¬rm£¬rmvbµÈ), ¿ÉÒÔÏÈÓÃ±ğµÄ¹¤¾ß£¨mencoder£©×ª»»Îªavi(ffmpegÄÜ½âÎöµÄ)¸ñÊ½.
+	// å¯¹ffmpegæ— æ³•è§£æçš„æ–‡ä»¶æ ¼å¼(wmv9ï¼Œrmï¼Œrmvbç­‰), å¯ä»¥å…ˆç”¨åˆ«çš„å·¥å…·ï¼ˆmencoderï¼‰è½¬æ¢ä¸ºavi(ffmpegèƒ½è§£æçš„)æ ¼å¼.
 	private String processAVI(int type) {
 		List<String> commend = new ArrayList<String>();
-		String outputAVIFile = outputPath + inputFileName.substring(0, inputFileName.lastIndexOf(".") - 1) + ".avi";
+		String outputAVIFile = outputPath + inputFileName.substring(0, inputFileName.lastIndexOf(".")) + ".avi";
 		commend.add(ffmpegPath + "mencoder");
 		commend.add(inputAbslouteFileName);
 		commend.add("-oac");
@@ -165,17 +177,17 @@ public class ConvertVideo {
 		try {
 			ProcessBuilder builder = new ProcessBuilder();
 			Process process = builder.command(commend).redirectErrorStream(true).start();
-			new PrintStream(process.getInputStream());
-			new PrintStream(process.getErrorStream());
+			new PrintStream(process.getInputStream(), logger);
+			new PrintStream(process.getErrorStream(), logger);
 			process.waitFor();
 			return outputAVIFile;
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("", e);
 			return null;
 		}
 	}
 
-	// ffmpegÄÜ½âÎöµÄ¸ñÊ½£º£¨asx£¬asf£¬mpg£¬wmv£¬3gp£¬mp4£¬mov£¬avi£¬flvµÈ£©
+	// ffmpegèƒ½è§£æçš„æ ¼å¼ï¼šï¼ˆasxï¼Œasfï¼Œmpgï¼Œwmvï¼Œ3gpï¼Œmp4ï¼Œmovï¼Œaviï¼Œflvç­‰ï¼‰
 	// private boolean processFLV(String oldfilepath) {
 	//
 	// if (!checkfile(inputPath)) {
@@ -220,9 +232,12 @@ public class ConvertVideo {
 	private boolean processMp4(String oldfilepath) {
 
 		if (!checkfile(inputAbslouteFileName)) {
-			System.out.println(oldfilepath + " is not file");
+			logger.info(oldfilepath + " is not file");
 			return false;
 		}
+
+		String outputAbsFileName = outputPath + inputFileName.substring(0, inputFileName.lastIndexOf(".")) + ".mp4";
+		logger.info("outputAbsFileName" + outputAbsFileName);
 
 		List<String> command = new ArrayList<String>();
 		command.add(ffmpegPath + "ffmpeg");
@@ -233,22 +248,20 @@ public class ConvertVideo {
 		command.add("44100");
 		command.add("-vcodec");
 		command.add("libx264");
-
-		command.add(outputPath + inputFileName.substring(0, inputFileName.lastIndexOf(".") - 1) + ".mp4");
+		command.add(outputAbsFileName);
 
 		try {
 
 			Process videoProcess = new ProcessBuilder(command).redirectErrorStream(true).start();
 
-			new PrintStream(videoProcess.getErrorStream()).start();
-
-			new PrintStream(videoProcess.getInputStream()).start();
+			new PrintStream(videoProcess.getErrorStream(), logger).start();
+			new PrintStream(videoProcess.getInputStream(), logger).start();
 
 			videoProcess.waitFor();
 
 			return true;
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("", e);
 			return false;
 		}
 	}
@@ -256,22 +269,33 @@ public class ConvertVideo {
 
 class PrintStream extends Thread {
 	java.io.InputStream __is = null;
+	Logger loggerp = null;
 
-	public PrintStream(java.io.InputStream is) {
+	public PrintStream(java.io.InputStream is, Logger logger) {
 		__is = is;
+		loggerp = logger;
 	}
 
 	public void run() {
+		StringBuffer sb = new StringBuffer();
 		try {
 			while (this != null) {
 				int _ch = __is.read();
-				if (_ch != -1)
-					System.out.print((char) _ch);
-				else
+				if (_ch != -1) {
+					sb.append((char) _ch);
+					if (_ch == 10) {
+						loggerp.info(sb.toString());
+						sb = new StringBuffer();
+					}
+
+				} else {
 					break;
+				}
+
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			loggerp.error("", e);
 		}
+		loggerp.info(sb.toString());
 	}
 }

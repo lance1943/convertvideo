@@ -54,6 +54,7 @@ public class ConvertServer extends Thread implements DisposableBean {
 		for (int i = 0; i < wokerNum; i++) {
 			workers[i] = new WorkThread("woker-" + i);
 			workers[i].setCapacity(wokerCacheCapacity);
+			workers[i].init();
 			workers[i].setFfmpegPath(ffmpegPath);
 			workers[i].setJdbcTemplate(jdbcTemplate);
 			workers[i].start();
